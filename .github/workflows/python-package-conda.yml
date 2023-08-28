@@ -1,0 +1,53 @@
+name: azmi documen
+
+on: [push in the halaman ]
+    # Atur selalu-auth di npmrc.
+    selalu-auth: # opsional, defaultnya salah
+    # Versi Spesifikasi versi yang akan digunakan. Contoh: 12.x, 10.15.1, >=10.15.0.
+    versi simpul: # opsional
+    # File yang berisi spesifikasi versi versi yang akan digunakan. Contoh: .nvmrc, .node-version, .tool-versions.
+    file versi simpul: # opsional
+    # Arsitektur target untuk digunakan Node. Contoh: x86, x64. Akan menggunakan arsitektur sistem secara default.
+    arsitektur: # opsional
+    # Atur opsi ini jika Anda ingin tindakan memeriksa versi terbaru yang tersedia dan memenuhi spesifikasi versi.
+    periksa-terbaru: # opsional
+    # Registri opsional untuk diatur untuk autentikasi. Akan mengatur registri dalam file .npmrc dan .yarnrc tingkat proyek, dan mengatur auth untuk membaca dari env.NODE_AUTH_TOKEN.
+    url registri: # opsional
+    # Cakupan opsional untuk mengautentikasi terhadap pendaftar yang tercakup. Akan kembali ke pemilik repositori saat menggunakan registri Paket GitHub (https://npm.pkg.github.com/).
+    cakupan: # opsional
+    # Digunakan untuk menarik distribusi node dari versi node. Karena ada default, ini biasanya tidak disediakan oleh pengguna. Saat menjalankan tindakan ini di github.com, nilai default sudah cukup. Saat menjalankan GHES, Anda dapat memberikan token akses pribadi untuk github.com jika Anda mengalami pembatasan tarif.
+    token: # opsional, defaultnya adalah ${{ github.server_url == 'https://github.com' && github.token || '' }}
+    # Digunakan untuk menentukan manajer paket untuk caching di direktori default. Nilai yang didukung: npm, benang, pnpm.
+    cache: # opsional
+    # Digunakan untuk menentukan jalur ke file ketergantungan: package-lock.json, benang.lock, dll. Mendukung wildcard atau daftar nama file untuk menyimpan beberapa dependensi.
+    jalur ketergantungan-cache: # opsional
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Add conda to system path
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        echo $CONDA/bin >> $GITHUB_PATH
+    - name: Install dependencies
+      run: |
+        conda env update --file environment.yml --name base
+    - name: Lint with flake8
+      run: |
+        conda install flake8
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        conda install pytest
+        pytest
